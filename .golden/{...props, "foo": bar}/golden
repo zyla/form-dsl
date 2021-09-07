@@ -1,0 +1,5 @@
+MapLiteral
+  ()
+  [ Splat (Var () "props")
+  , Item ( StringLiteral () "foo" , Var () "bar" )
+  ]

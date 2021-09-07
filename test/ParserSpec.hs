@@ -25,3 +25,6 @@ spec = do
   parseTest "\"foo\""
   parseTest "hello"
   parseTest "[1, 2   ,3]"
+  parseTest "[x, ...xs]"
+  parseTest "{\"hello\": world, 2: []}"
+  parseTest "{...props, \"foo\": bar}"

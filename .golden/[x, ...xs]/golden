@@ -1,0 +1,1 @@
+SequenceLiteral () [ Item (Var () "x") , Splat (Var () "xs") ]

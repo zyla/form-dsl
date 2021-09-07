@@ -1,0 +1,5 @@
+MapLiteral
+  ()
+  [ Item ( StringLiteral () "hello" , Var () "world" )
+  , Item ( IntegerLiteral () 2 , SequenceLiteral () [] )
+  ]

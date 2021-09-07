@@ -48,7 +48,7 @@ expr'
   <|> StringLiteral unknownSrcLoc <$> stringLiteral
   <|> Var unknownSrcLoc <$> identifier
   <|> SequenceLiteral unknownSrcLoc <$> between (symbol "[") (symbol "]") (sequenceItem expr' `sepBy` symbol ",")
-  <|> MapLiteral unknownSrcLoc <$> between (symbol "{") (symbol "}") (many (sequenceItem mapEntry))
+  <|> MapLiteral unknownSrcLoc <$> between (symbol "{") (symbol "}") (sequenceItem mapEntry `sepBy` symbol ",")
 
 sequenceItem :: Parser a -> Parser (SequenceItem a)
 sequenceItem inner

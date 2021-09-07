@@ -57,9 +57,17 @@ primaryExpr :: Parser Expr
 primaryExpr
   =   IntegerLiteral unknownSrcLoc <$> integer
   <|> StringLiteral unknownSrcLoc <$> stringLiteral
+  <|> Lambda unknownSrcLoc <$> try (parameterList <* symbol "=>") <*> expr
   <|> Var unknownSrcLoc <$> identifier
+  <|> between (symbol "(") (symbol ")") expr
   <|> SequenceLiteral unknownSrcLoc <$> between (symbol "[") (symbol "]") (sequenceItem expr `sepBy` symbol ",")
   <|> MapLiteral unknownSrcLoc <$> between (symbol "{") (symbol "}") (sequenceItem mapEntry `sepBy` symbol ",")
+  <|> Placeholder unknownSrcLoc <$ symbol "_"
+
+parameterList :: Parser [Ident]
+parameterList
+  =   pure <$> identifier
+  <|> between (symbol "(") (symbol ")") (identifier `sepBy` symbol ",")
 
 sequenceItem :: Parser a -> Parser (SequenceItem a)
 sequenceItem inner

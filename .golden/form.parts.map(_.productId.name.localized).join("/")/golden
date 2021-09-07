@@ -1,0 +1,15 @@
+MethodCall
+  ()
+  (MethodCall
+     ()
+     (MethodCall () (Var () "form") "parts" [])
+     "map"
+     [ MethodCall
+         ()
+         (MethodCall
+            () (MethodCall () (Placeholder ()) "productId" []) "name" [])
+         "localized"
+         []
+     ])
+  "join"
+  [ StringLiteral () "/" ]

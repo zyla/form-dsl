@@ -31,3 +31,10 @@ spec = do
 
   parseTest "category.divisible"
   parseTest "category.foo.extend(bar).and(1, 2).baz"
+
+  parseTest "() => foo"
+  parseTest "x => foo"
+  parseTest "(x) => foo"
+  parseTest "(x, y) => foo"
+
+  parseTest "form.parts.map(_.productId.name.localized).join(\"/\")"

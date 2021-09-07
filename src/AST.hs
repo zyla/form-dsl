@@ -17,6 +17,7 @@ data Expr
   | StringLiteral SrcLoc Text
   | Var SrcLoc Ident
   | Lambda SrcLoc [Ident] Expr
+  | Apply SrcLoc Expr [Expr]
   | Placeholder SrcLoc
   | MethodCall SrcLoc Expr Ident [Expr]
   | Binary SrcLoc Expr Operator Expr
@@ -26,3 +27,25 @@ data Expr
 
 data SequenceItem a = Item a | Splat Expr
   deriving (Eq, Show)
+
+exprSrcLoc :: Expr -> SrcLoc
+exprSrcLoc = \case
+  IntegerLiteral loc _ -> loc
+  StringLiteral loc _ -> loc
+  Var loc _ -> loc
+  Lambda loc _ _ -> loc
+  Placeholder loc -> loc
+  MethodCall loc _ _ _ -> loc
+  Binary loc _ _ _ -> loc
+  SequenceLiteral loc _ -> loc
+  MapLiteral loc _ -> loc
+
+data Type
+  = TypeConApp Ident [Type]
+  | FunctionType [Type] Type
+  deriving (Eq, Show)
+
+data DataType =
+  RecordType
+  { dtFields :: [(Ident, Type)]
+  }

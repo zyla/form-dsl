@@ -23,6 +23,7 @@ library
       CustomPrelude
       JS
       Parser
+      TypeCheck
   other-modules:
       Paths_form_dsl
   hs-source-dirs:

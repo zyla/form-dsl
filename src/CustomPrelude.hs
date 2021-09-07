@@ -14,6 +14,7 @@ import Data.Map as X (Map)
 import Data.Set as X (Set)
 
 import Data.Maybe as X (fromMaybe)
+import Control.Monad as X
 
 tshow :: Show a => a -> Text
 tshow = Text.pack . show

@@ -1,0 +1,13 @@
+MethodCall
+  ()
+  (MethodCall
+     ()
+     (MethodCall
+        ()
+        (MethodCall () (Var () "category") "foo" [])
+        "extend"
+        [ Var () "bar" ])
+     "and"
+     [ IntegerLiteral () 1 , IntegerLiteral () 2 ])
+  "baz"
+  []

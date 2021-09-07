@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Parser where
 
+import CustomPrelude
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Char as Char
@@ -40,25 +41,35 @@ stringLiteral :: Parser Text
 stringLiteral = lexeme $ char '"' *> (Text.pack <$> (manyTill L.charLiteral (char '"')))
 
 expr :: Parser Expr
-expr = optional sc *> expr'
+expr = methodCallExpr
 
-expr' :: Parser Expr
-expr'
+methodCallExpr :: Parser Expr
+methodCallExpr = do
+  receiver <- primaryExpr
+  chain <- many $ do
+    symbol "."
+    name <- identifier 
+    args <- optional $ between (symbol "(") (symbol ")") (expr `sepBy` symbol ",")
+    pure (unknownSrcLoc, name, fromMaybe [] args)
+  pure $ foldl (\r (loc, name, args) -> MethodCall loc r name args) receiver chain
+
+primaryExpr :: Parser Expr
+primaryExpr
   =   IntegerLiteral unknownSrcLoc <$> integer
   <|> StringLiteral unknownSrcLoc <$> stringLiteral
   <|> Var unknownSrcLoc <$> identifier
-  <|> SequenceLiteral unknownSrcLoc <$> between (symbol "[") (symbol "]") (sequenceItem expr' `sepBy` symbol ",")
+  <|> SequenceLiteral unknownSrcLoc <$> between (symbol "[") (symbol "]") (sequenceItem expr `sepBy` symbol ",")
   <|> MapLiteral unknownSrcLoc <$> between (symbol "{") (symbol "}") (sequenceItem mapEntry `sepBy` symbol ",")
 
 sequenceItem :: Parser a -> Parser (SequenceItem a)
 sequenceItem inner
-  =   Splat <$> (symbol "..." *> expr')
+  =   Splat <$> (symbol "..." *> expr)
   <|> Item <$> inner
 
 mapEntry :: Parser (Expr, Expr)
-mapEntry = (,) <$> expr' <*> (symbol ":" *> expr')
+mapEntry = (,) <$> expr <*> (symbol ":" *> expr)
 
-identifier :: Parser Operator
+identifier :: Parser Ident
 identifier = lexeme $ Text.pack <$> ((:) <$> satisfy isIdentifierStart <*> many (satisfy isIdentifierChar))
   where
   isIdentifierStart c = Char.isAlphaNum c

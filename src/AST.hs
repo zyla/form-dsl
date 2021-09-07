@@ -16,7 +16,7 @@ data Expr
   = IntegerLiteral SrcLoc Integer
   | StringLiteral SrcLoc Text
   | Var SrcLoc Ident
-  | MethodCall SrcLoc Expr [Expr]
+  | MethodCall SrcLoc Expr Ident [Expr]
   | Binary SrcLoc Expr Operator Expr
   | SequenceLiteral SrcLoc [SequenceItem Expr]
   | MapLiteral SrcLoc [SequenceItem (Expr, Expr)]

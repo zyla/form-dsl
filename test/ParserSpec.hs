@@ -28,3 +28,6 @@ spec = do
   parseTest "[x, ...xs]"
   parseTest "{\"hello\": world, 2: []}"
   parseTest "{...props, \"foo\": bar}"
+
+  parseTest "category.divisible"
+  parseTest "category.foo.extend(bar).and(1, 2).baz"

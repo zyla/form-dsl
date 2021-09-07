@@ -1,0 +1,6 @@
+SequenceLiteral
+  ()
+  [ Item (IntegerLiteral () 1)
+  , Item (IntegerLiteral () 2)
+  , Item (IntegerLiteral () 3)
+  ]

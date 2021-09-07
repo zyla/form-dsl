@@ -1,0 +1,43 @@
+name:                form-dsl
+version:             0.1.0.0
+#synopsis:
+#description:
+homepage:            https://github.com/githubuser/form-dsl#readme
+license:             BSD3
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2021 Author name here
+category:            Web
+extra-source-files:
+- README.md
+
+default-extensions:
+  - OverloadedStrings
+  - LambdaCase
+
+dependencies:
+  - base >= 4.7 && < 5
+  - megaparsec
+  - text
+  - pretty-show
+  - containers
+  - mtl
+  - transformers
+
+library:
+  source-dirs:      src
+
+tests:
+  tests:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -O0
+    dependencies:
+      - form-dsl
+      - hspec
+      - hspec-discover
+      - hspec-golden
+    when:
+      - condition: false
+        other-modules: Paths_form_dsl

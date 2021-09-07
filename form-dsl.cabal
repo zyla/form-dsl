@@ -1,0 +1,67 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           form-dsl
+version:        0.1.0.0
+category:       Web
+homepage:       https://github.com/githubuser/form-dsl#readme
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      AST
+      CustomPrelude
+      JS
+      Parser
+  other-modules:
+      Paths_form_dsl
+  hs-source-dirs:
+      src
+  default-extensions:
+      OverloadedStrings
+      LambdaCase
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , megaparsec
+    , mtl
+    , pretty-show
+    , text
+    , transformers
+  default-language: Haskell2010
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Main
+      ParserSpec
+  hs-source-dirs:
+      test
+  default-extensions:
+      OverloadedStrings
+      LambdaCase
+  ghc-options: -O0
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , form-dsl
+    , hspec
+    , hspec-discover
+    , hspec-golden
+    , megaparsec
+    , mtl
+    , pretty-show
+    , text
+    , transformers
+  default-language: Haskell2010

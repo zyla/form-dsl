@@ -38,3 +38,16 @@ spec = do
   parseTest "(x, y) => foo"
 
   parseTest "form.parts.map(_.productId.name.localized).join(\"/\")"
+
+  let parseTypeTest input =
+        it (Text.unpack input) $
+          case MP.parse (Parser.type_ <* MP.eof) "" input of
+            Left err ->
+              error $ MP.errorBundlePretty err
+            Right expr ->
+              defaultGolden (Text.unpack input) (ppShow expr)
+
+  parseTypeTest "String"
+  parseTypeTest "Translated<String>"
+  parseTypeTest "Dynamic<Translated<String>>"
+  parseTypeTest "Either<String, Int>"

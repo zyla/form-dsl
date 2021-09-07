@@ -12,7 +12,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import AST (Expr(..), Ident, Operator, SequenceItem(..), unknownSrcLoc)
+import AST (Expr(..), Ident, Operator, SequenceItem(..), unknownSrcLoc, Type(..))
 
 type Parser = Parsec Void Text
 
@@ -89,3 +89,9 @@ operator = lexeme $ Text.pack <$> ((:) <$> satisfy isOperatorChar <*> many (sati
 isOperatorChar :: Char -> Bool
 isOperatorChar c = Text.any (==c) "~!@#$%^&*_+-=,./?:<>"
   || (c >= '\x1f000' && c <= '\x1ffff')
+
+type_ :: Parser Type
+type_ = do
+  name <- identifier
+  args <- optional $ between (symbol "<") (symbol ">") (type_ `sepBy` symbol ",")
+  pure $ TypeConApp name (fromMaybe [] args)

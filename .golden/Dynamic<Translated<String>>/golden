@@ -1,0 +1,2 @@
+TypeConApp
+  "Dynamic" [ TypeConApp "Translated" [ TypeConApp "String" [] ] ]

@@ -47,7 +47,8 @@ exprSrcLoc = \case
   RecordAccessor loc _ _ -> loc
 
 data Type
-  = TypeConApp Ident [Type]
+  = TypeVar Ident
+  | TypeConApp Ident [Type]
   | FunctionType [Type] Type
   deriving (Eq, Show)
 

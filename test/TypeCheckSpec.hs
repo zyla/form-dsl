@@ -33,6 +33,7 @@ env = TC.Env
   , TC.envVars = Map.fromList
     [ ("catalogue", parseType "MenuCatalogue")
     , ("product", parseType "Product")
+    , ("products", parseType "Array<Product>")
     ]
   }
 

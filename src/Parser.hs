@@ -91,7 +91,23 @@ isOperatorChar c = Text.any (==c) "~!@#$%^&*_+-=,./?:<>"
   || (c >= '\x1f000' && c <= '\x1ffff')
 
 type_ :: Parser Type
-type_ = do
+type_ = typeConApp <|> functionType
+
+typeConApp :: Parser Type
+typeConApp = do
   name <- identifier
-  args <- optional $ between (symbol "<") (symbol ">") (type_ `sepBy` symbol ",")
-  pure $ TypeConApp name (fromMaybe [] args)
+  if isTyVarName name then
+    pure $ TypeVar name
+    else do
+      args <- optional $ between (symbol "<") (symbol ">") (type_ `sepBy` symbol ",")
+      pure $ TypeConApp name (fromMaybe [] args)
+
+isTyVarName :: Ident -> Bool
+isTyVarName = Char.isLower . Text.head
+
+functionType :: Parser Type
+functionType = do
+  args <- between (symbol "(") (symbol ")") (type_ `sepBy` symbol ",")
+  symbol "=>"
+  ret <- type_
+  pure $ FunctionType args ret

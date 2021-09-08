@@ -104,3 +104,21 @@ resolveMethod env loc receiverType name = do
           Left $ typeError loc $ "Property " <> name <> " not found on type " <> dtName
     _ ->
       Left $ typeError loc "Unimplemented case in resolveMethod"
+
+data PrimMetod = PrimMethod
+  { primMethodTypeParameters :: [Ident]
+  , primMethodArgs :: [Type]
+  , primMethodReult :: Type
+  }
+
+data PrimType = PrimType
+  { primTypeParameters :: [Ident]
+  , primTypeMethods :: Map Ident PrimMethod
+  }
+
+primTypes :: Map Ident PrimType
+primTypes = Map.fromList
+  [ ("Array", PrimType ["a"] $ Map.fromList
+      [ ("map", PrimMethod ["b"] (parseType "(a) => b") (parseType "b"))
+      ])
+  ]

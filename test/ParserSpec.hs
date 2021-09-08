@@ -51,3 +51,7 @@ spec = do
   parseTypeTest "Translated<String>"
   parseTypeTest "Dynamic<Translated<String>>"
   parseTypeTest "Either<String, Int>"
+  parseTypeTest "() => Int"
+  parseTypeTest "(String) => Int"
+  parseTypeTest "(Int, String) => Int"
+  parseTypeTest "a"

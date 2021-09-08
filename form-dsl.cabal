@@ -47,6 +47,7 @@ test-suite tests
   other-modules:
       Main
       ParserSpec
+      TypeCheckSpec
   hs-source-dirs:
       test
   default-extensions:
@@ -56,6 +57,7 @@ test-suite tests
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
     , form-dsl
     , hspec
     , hspec-discover

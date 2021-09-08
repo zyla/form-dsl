@@ -23,6 +23,10 @@ data Expr
   | Binary SrcLoc Expr Operator Expr
   | SequenceLiteral SrcLoc [SequenceItem Expr]
   | MapLiteral SrcLoc [SequenceItem (Expr, Expr)]
+
+  -- only after elaboration:
+  | PrimCall SrcLoc Ident [Expr]
+  | RecordAccessor SrcLoc Expr Ident
   deriving (Eq, Show)
 
 data SequenceItem a = Item a | Splat Expr
@@ -39,6 +43,8 @@ exprSrcLoc = \case
   Binary loc _ _ _ -> loc
   SequenceLiteral loc _ -> loc
   MapLiteral loc _ -> loc
+  PrimCall loc _ _ -> loc
+  RecordAccessor loc _ _ -> loc
 
 data Type
   = TypeConApp Ident [Type]

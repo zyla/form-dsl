@@ -55,4 +55,5 @@ data Type
 data DataType =
   RecordType
   { dtFields :: [(Ident, Type)]
+  , dtIdType :: Maybe Type
   }

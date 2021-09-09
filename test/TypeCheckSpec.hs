@@ -27,15 +27,19 @@ env = TC.Env
         , ("photo", parseType "Photo")
         , ("price", parseType "Money")
         , ("parameters", parseType "Array<ParameterId>")
-        ] })
+        ]
+      , dtIdType = Just $ parseType "ProductId"
+      })
     , ("MenuCatalogue", RecordType { dtFields =
         [ ("products", parseType "Map<ProductId, Product>")
-        ] })
+        ]
+        , dtIdType = Nothing })
     ]
   , TC.envVars = Map.fromList
     [ ("catalogue", parseType "MenuCatalogue")
     , ("product", parseType "Product")
     , ("products", parseType "Array<Product>")
+    , ("productWithId", parseType "WithId<Product>")
     ]
   }
 
@@ -60,6 +64,9 @@ spec = do
   tcTest "products.flatMap(p => products)" "Array<Product>"
   tcTest "products.length" "Int"
   tcTest "products.map(x => products).map(_.length)" "Array<Int>"
+
+  tcTest "productWithId.id" "ProductId"
+  tcTest "productWithId.name" "Translated<String>"
 
 
 parseExpr :: Text -> Expr

@@ -112,10 +112,29 @@ data Method =
   , methodResultType :: Type
   , methodCompileCall :: Expr -> [Expr] -> Expr
   }
+  
 
 resolveMethod :: Env -> SrcLoc -> Type -> Ident -> TcM Method
 resolveMethod env loc receiverType name =
   case receiverType of
+    -- type WithId entity = { id :: IdType entity, entity :: entity }
+    TypeConApp "WithId" [entityType@(TypeConApp dtName [])] ->
+      case name of
+        "id" -> do
+          dt <- findDataType env dtName
+          idType <- case dtIdType dt of
+            Just t -> pure t
+            Nothing -> err $ typeError loc $ "No ID type specified for " <> dtName
+          pure $ Method
+            { methodArgTypes = []
+            , methodResultType = idType
+            , methodCompileCall = \receiver _ -> RecordAccessor loc receiver "id"
+            }
+
+        _ -> do
+          method <- resolveMethod env loc entityType name
+          pure $ method { methodCompileCall = \receiver args -> methodCompileCall method (RecordAccessor loc receiver "entity") args }
+
     TypeConApp dtName tyArgs | Just primType <- Map.lookup dtName primTypes -> do
       method <- case Map.lookup name (primTypeMethods primType) of
         Just m -> pure m
@@ -172,3 +191,9 @@ primTypes = Map.fromList
       , ("length", PrimMethod [] [] (parseType "Int"))
       ])
   ]
+
+-- xs :: Array<Dynamic<Int>>
+-- xs.map(x => y => x + y) : Dynamic<Array<(Int) => Int>>
+--
+-- observable(() => xs.map(x => y => x() + y()))
+-- 

@@ -1,0 +1,4 @@
+PrimCall
+  ()
+  "prim_Array_flatMap"
+  [ Var () "products" , Lambda () [ "p" ] (Var () "products") ]

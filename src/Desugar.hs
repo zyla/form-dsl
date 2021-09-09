@@ -16,7 +16,9 @@ desugar = \case
   expr@StringLiteral{} -> expr
   expr@Var{} -> expr
   Lambda loc args body -> Lambda loc args (desugar body)
-  Placeholder{} -> error "Invalid placeholder"
+  expr@Placeholder{} ->
+    expr
+    -- error "Invalid placeholder"
   expr@(MethodCall loc _ _ _) ->
     case desugarMethodCallSequence expr of
       (Placeholder ploc, replaceReceiver) ->

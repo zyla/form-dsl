@@ -14,6 +14,8 @@ import qualified Text.Megaparsec as MP
 import qualified Parser
 import qualified TypeCheck as TC
 import AST (DataType(..), Type, Expr)
+import Utils (parseType)
+import Desugar (desugar)
 
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 
@@ -41,7 +43,8 @@ spec :: Spec
 spec = do
   let tcTest input ty =
         it (Text.unpack (input <> ": " <> ty)) $
-          case TC.infer env (parseExpr input) of
+          let expr = desugar (parseExpr input) in
+          case TC.runTcM $ TC.infer env expr of
             Right (elaborated, ty') -> do
               parseType ty `shouldBe` ty'
               runGolden input (Text.pack $ ppShow elaborated)
@@ -53,14 +56,11 @@ spec = do
   tcTest "product" "Product"
 
   tcTest "product.name" "Translated<String>"
+  tcTest "products.map(_.name)" "Array<Translated<String>>"
+  tcTest "products.flatMap(p => products)" "Array<Product>"
+  tcTest "products.length" "Int"
+  tcTest "products.map(x => products).map(_.length)" "Array<Int>"
 
-parseType :: Text -> Type
-parseType input =
-  case MP.parse (Parser.type_ <* MP.eof) "" input of
-    Left err ->
-      error $ MP.errorBundlePretty err
-    Right x ->
-      x
 
 parseExpr :: Text -> Expr
 parseExpr input =

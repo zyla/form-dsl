@@ -7,8 +7,11 @@ import CustomPrelude
 import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.List as List
+import Control.Monad.Trans.State (StateT, runStateT, modify, gets)
+import Control.Monad.Trans.Class (lift)
 
 import AST
+import Utils (parseType)
 
 data Env = Env
   { envDataTypes :: Map Ident DataType
@@ -20,7 +23,14 @@ type TypeError = (SrcLoc, Text)
 typeError :: SrcLoc -> Text -> TypeError
 typeError = (,)
 
-type TcM = Either TypeError
+type TcM = StateT TcState (Either TypeError)
+
+runTcM :: TcM a -> Either TypeError a
+runTcM = fmap fst . flip runStateT (TcState mempty)
+
+data TcState = TcState
+  { tcSubst :: Map Ident Type
+  }
 
 -- | Infer type of an expression and elaborate it.
 infer :: Env -> Expr -> TcM (Expr, Type)
@@ -32,21 +42,22 @@ infer env expr = case expr of
   Var loc name ->
     case Map.lookup name (envVars env) of
       Just ty -> pure (expr, ty)
-      Nothing -> Left $ typeError loc $ "Unknown variable " <> name
+      Nothing -> err $ typeError loc $ "Unknown variable " <> name
   Lambda{} ->
-    Left $ typeError unknownSrcLoc "Lambda not inferable"
+    err $ typeError unknownSrcLoc "Lambda not inferable"
   Placeholder{} ->
-    Left $ typeError unknownSrcLoc "Placeholder should be desugared before type checking"
+    err $ typeError unknownSrcLoc "Placeholder should be desugared before type checking"
   MethodCall loc receiver name args -> do
     (eReceiver, receiverTy) <- infer env receiver
     method <- resolveMethod env loc receiverTy name
     when (length (methodArgTypes method) /= length args) $ do
-      Left $ typeError loc $ "expected " <> tshow (length (methodArgTypes method)) <> " arguments, got " <> tshow (length args)
+      err $ typeError loc $ "expected " <> tshow (length (methodArgTypes method)) <> " arguments, got " <> tshow (length args)
     eArgs <- forM (zip args (methodArgTypes method)) $ \(arg, ty) ->
       check env arg ty
-    pure (methodCompileCall method eReceiver eArgs, methodResultType method)
+    s <- gets tcSubst
+    pure (methodCompileCall method eReceiver eArgs, subst s (methodResultType method))
   _ ->
-    Left $ typeError unknownSrcLoc "Unimplemented"
+    err $ typeError unknownSrcLoc "Unimplemented"
 
 -- | Check expression against a given type, and elaborate it.
 check :: Env -> Expr -> Type -> TcM Expr
@@ -56,24 +67,40 @@ check env expr ty =
       case ty of
         FunctionType argTys resultTy -> do
           when (length args /= length argTys) $
-            Left $ typeError loc "mismatched number of arguments"
+            err $ typeError loc "mismatched number of arguments"
           eBody <- check (extendEnvVars (Map.fromList (zip args argTys)) env) body resultTy
           pure $ Lambda loc args eBody
         _ ->
-          Left $ typeError loc $
+          err $ typeError loc $
             "Type mismatch. Expected " <> tshow ty <> ", got a function"
     _ -> do
       (elaborated, inferred) <- infer env expr
-      when (inferred /= ty) $
-        Left $ typeError (exprSrcLoc expr) $
-          "Type mismatch. Expected " <> tshow ty <> ", got " <> tshow inferred
+      unify (exprSrcLoc expr) inferred ty
       pure elaborated
+
+unify :: SrcLoc -> Type -> Type -> TcM ()
+unify _ (TypeVar v) ty =
+  -- TODO: check if not already resolved!
+  modifySubst (Map.insert v ty)
+unify loc ty (TypeVar v) = unify loc (TypeVar v) ty
+unify loc (TypeConApp ty1 args1) (TypeConApp ty2 args2) = do
+  when (ty1 /= ty2) $
+    err $ typeError loc $ "Type mismatch: " <> ty1 <> " /= " <> ty2
+  when (length args1 /= length args2) $
+    err $ typeError loc $ "Mismatched number of generic type arguments: " <> tshow (length args1) <> " /= " <> tshow (length args2)
+  forM_ (zip args1 args2) $ \(t1, t2) -> unify loc t1 t2
+
+modifySubst :: (Map Ident Type -> Map Ident Type) -> TcM ()
+modifySubst f = modify (\s -> s { tcSubst = f (tcSubst s) })
+
+err :: TypeError -> TcM a
+err = lift . Left
 
 findDataType :: Env -> Ident -> TcM DataType
 findDataType env name =
   case Map.lookup name (envDataTypes env) of
     Just ty -> pure ty
-    Nothing -> Left $ typeError unknownSrcLoc $ "Unknown data type " <> name
+    Nothing -> err $ typeError unknownSrcLoc $ "Unknown data type " <> name
 
 extendEnvVars :: Map Ident Type -> Env -> Env
 extendEnvVars vars env = env { envVars = vars <> envVars env }
@@ -87,9 +114,21 @@ data Method =
   }
 
 resolveMethod :: Env -> SrcLoc -> Type -> Ident -> TcM Method
-resolveMethod env loc receiverType name = do
-  -- First, try a simple property accessor
+resolveMethod env loc receiverType name =
   case receiverType of
+    TypeConApp dtName tyArgs | Just primType <- Map.lookup dtName primTypes -> do
+      method <- case Map.lookup name (primTypeMethods primType) of
+        Just m -> pure m
+        Nothing ->
+          err $ typeError loc $ "Method " <> name <> " not found on type " <> dtName
+      let tyvars = Map.fromList $ zip (primTypeParameters primType) tyArgs
+      let primName = "prim_" <> dtName <> "_" <> name
+      pure $ Method
+        { methodArgTypes = subst tyvars <$> primMethodArgs method
+        , methodResultType = subst tyvars (primMethodReult method)
+        , methodCompileCall = \receiver args -> PrimCall loc primName (receiver : args)
+        }
+    -- Property accessor for a record type
     TypeConApp dtName [] -> do
       dt <- findDataType env dtName
       case List.lookup name (dtFields dt) of
@@ -101,11 +140,20 @@ resolveMethod env loc receiverType name = do
                 RecordAccessor loc receiver name
             }
         Nothing ->
-          Left $ typeError loc $ "Property " <> name <> " not found on type " <> dtName
+          err $ typeError loc $ "Property " <> name <> " not found on type " <> dtName
     _ ->
-      Left $ typeError loc "Unimplemented case in resolveMethod"
+      err $ typeError loc "Unimplemented case in resolveMethod"
 
-data PrimMetod = PrimMethod
+subst :: Map Ident Type -> Type -> Type
+subst s = \case
+  TypeVar v ->
+    fromMaybe (TypeVar v) $ Map.lookup v s
+  TypeConApp name args ->
+    TypeConApp name (subst s <$> args)
+  FunctionType params ret ->
+    FunctionType (subst s <$> params) (subst s ret)
+
+data PrimMethod = PrimMethod
   { primMethodTypeParameters :: [Ident]
   , primMethodArgs :: [Type]
   , primMethodReult :: Type
@@ -119,6 +167,8 @@ data PrimType = PrimType
 primTypes :: Map Ident PrimType
 primTypes = Map.fromList
   [ ("Array", PrimType ["a"] $ Map.fromList
-      [ ("map", PrimMethod ["b"] (parseType "(a) => b") (parseType "b"))
+      [ ("map", PrimMethod ["b"] [parseType "(a) => b"] (parseType "Array<b>"))
+      , ("flatMap", PrimMethod ["b"] [parseType "(a) => Array<b>"] (parseType "Array<b>"))
+      , ("length", PrimMethod [] [] (parseType "Int"))
       ])
   ]

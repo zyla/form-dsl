@@ -1,0 +1,6 @@
+PrimCall
+  ()
+  "prim_Array_map"
+  [ Var () "products"
+  , Lambda () [ "$x" ] (RecordAccessor () (Var () "$x") "name")
+  ]

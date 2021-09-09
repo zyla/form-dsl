@@ -1,0 +1,10 @@
+PrimCall
+  ()
+  "prim_Array_map"
+  [ PrimCall
+      ()
+      "prim_Array_map"
+      [ Var () "products" , Lambda () [ "x" ] (Var () "products") ]
+  , Lambda
+      () [ "$x" ] (PrimCall () "prim_Array_length" [ Var () "$x" ])
+  ]
